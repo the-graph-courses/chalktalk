@@ -1,0 +1,88 @@
+---
+title: "chalktalk Demo"
+format: revealjs
+execute:
+    echo: true
+    eval: false
+---
+
+## Sustainable AI
+
+::: {.fragment tts-script="Welcome to our presentation on Sustainable AI!"}
+:::
+
+::: {.fragment tts-script="Today, we will discuss what Sustainable AI is and why it matters."}
+Overview of Presentation
+:::
+
+## What is Sustainable AI?
+
+::: {.fragment tts-script="Sustainable AI refers to the development and implementation of AI technologies in ways that are environmentally responsible and socially equitable."}
+Definition of Sustainable AI
+:::
+
+## Importance of Sustainable AI
+
+::: {.fragment tts-script="As AI becomes increasingly prevalent, it is vital to consider its impact on the environment and society."}
+Why it Matters
+:::
+- Environmental Impact
+- Social Equity
+- Ethical Considerations
+
+## Environmental Impact of AI
+
+::: {.fragment tts-script="AI technologies often require significant computational resources, leading to higher energy consumption."}
+AI & Energy Consumption
+:::
+- Data Centers
+- Algorithm Efficiency
+- Renewable Energy Sources
+
+## Social Equity in AI
+
+::: {.fragment tts-script="Ensuring that AI technologies do not reinforce existing biases or inequalities is crucial for sustainable development."}
+Addressing Social Issues
+:::
+- Bias in Algorithms
+- Access to Technology
+- Inclusive Policies
+
+## Strategies for Sustainable AI
+
+::: {.fragment tts-script="There are several strategies organizations can adopt to promote sustainable AI practices."}
+Promoting Sustainability
+:::
+- Optimize Algorithms
+- Use Green Data Centers
+- Foster Collaboration
+
+## Case Studies
+
+::: {.fragment tts-script="Let's look at some examples of organizations successfully implementing sustainable AI practices."}
+Successful Implementations
+:::
+- Google: Carbon-Free AI
+- Microsoft: AI for Accessibility
+- OpenAI: Research and Ethical Guidelines
+
+## Future of Sustainable AI
+
+::: {.fragment tts-script="The future of AI will increasingly depend on sustainable practices to ensure long-lasting benefits for society and the planet."}
+Looking Forward
+:::
+- Regulation and Standards
+- Community Engagement
+- Ongoing Research
+
+## Conclusion
+
+::: {.fragment tts-script="In conclusion, sustainable AI requires a collective effort to balance technological advancement with environmental and social responsibility."}
+Key Takeaways
+:::
+- Importance of Sustainability
+- Collective Responsibility
+- A Call to Action
+
+::: {.fragment tts-script="Thank you for joining the presentation on Sustainable AI!"}
+:::
