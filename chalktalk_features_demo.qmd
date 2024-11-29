@@ -23,7 +23,7 @@ theme: moon
 ::: {.fragment tts-script="Here's how to use fragments with text-to-speech in your presentations."}
 :::
 
-::: {.fragment tts-script="Start a section with the class 'fragment' and include your speech text in the tts-script attribute."}
+::: {.fragment tts-script="Start a div with the class 'fragment' and include your speech text in the tts-script attribute."}
 The basic syntax looks like this:
 
 ```markdown
@@ -106,19 +106,25 @@ $$ x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$
 ::: {.fragment tts-script="Now, let's include a plot using data from the palmerpenguins dataset. Here is the code:"}
 
 ```{r}
+#
 library(ggplot2)
+library(plotly)
 library(palmerpenguins)
+
 p <- ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
     geom_point() +
     theme_minimal() +
-    labs(title = "Penguin Sizes", x = "Flipper Length (mm)", y = "Body Mass (g)")
+    labs(title = "Penguin Size Comparison",
+         x = "Flipper Length (mm)",
+         y = "Body Mass (g)")
+
 ```
 
 :::
 
 ::: {.fragment tts-script="And here is the plot:"}
 
-```{r fig.width=5, fig.height=5}
+```{r}
 p
 ```
 

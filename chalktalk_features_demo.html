@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script src="temp_presentation_files/libs/clipboard/clipboard.min.js"></script>
-<script src="temp_presentation_files/libs/quarto-html/tabby.min.js"></script>
-<script src="temp_presentation_files/libs/quarto-html/popper.min.js"></script>
-<script src="temp_presentation_files/libs/quarto-html/tippy.umd.min.js"></script>
-<link href="temp_presentation_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="temp_presentation_files/libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="temp_presentation_files/libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
-<link href="temp_presentation_files/libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+<script src="chalktalk_features_demo_files/libs/clipboard/clipboard.min.js"></script>
+<script src="chalktalk_features_demo_files/libs/quarto-html/tabby.min.js"></script>
+<script src="chalktalk_features_demo_files/libs/quarto-html/popper.min.js"></script>
+<script src="chalktalk_features_demo_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="chalktalk_features_demo_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="chalktalk_features_demo_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="chalktalk_features_demo_files/libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
+<link href="chalktalk_features_demo_files/libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
   <meta name="generator" content="quarto-1.5.56">
 
   <title>ChalkTalk Demo</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
-  <link rel="stylesheet" href="temp_presentation_files/libs/revealjs/dist/reset.css">
-  <link rel="stylesheet" href="temp_presentation_files/libs/revealjs/dist/reveal.css">
+  <link rel="stylesheet" href="chalktalk_features_demo_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="chalktalk_features_demo_files/libs/revealjs/dist/reveal.css">
   <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
@@ -94,11 +94,11 @@
     code span.vs { color: #abe338; } /* VerbatimString */
     code span.wa { color: #dcc6e0; } /* Warning */
   </style>
-  <link rel="stylesheet" href="temp_presentation_files/libs/revealjs/dist/theme/quarto.css">
-  <link href="temp_presentation_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
-  <link href="temp_presentation_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
-  <link href="temp_presentation_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
-  <link href="temp_presentation_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <link rel="stylesheet" href="chalktalk_features_demo_files/libs/revealjs/dist/theme/quarto.css">
+  <link href="chalktalk_features_demo_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="chalktalk_features_demo_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="chalktalk_features_demo_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="chalktalk_features_demo_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
   <style type="text/css">
 
   .callout {
@@ -411,7 +411,7 @@
 <div class="fragment" data-tts-script="Here's how to use fragments with text-to-speech in your presentations.">
 
 </div>
-<div class="fragment" data-tts-script="Start a section with the class 'fragment' and include your speech text in the tts-script attribute.">
+<div class="fragment" data-tts-script="Start a div with the class 'fragment' and include your speech text in the tts-script attribute.">
 <p>The basic syntax looks like this:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href=""></a>::: {.fragment tts-script="Your speech text here"}</span>
 <span id="cb1-2"><a href=""></a>Your visible content here</span>
@@ -491,12 +491,17 @@
 <h2>Plot Example</h2>
 <div class="fragment" data-tts-script="Now, let's include a plot using data from the palmerpenguins dataset. Here is the code:">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb5-2"><a href=""></a><span class="fu">library</span>(palmerpenguins)</span>
-<span id="cb5-3"><a href=""></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> flipper_length_mm, <span class="at">y =</span> body_mass_g, <span class="at">color =</span> species)) <span class="sc">+</span></span>
-<span id="cb5-4"><a href=""></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb5-5"><a href=""></a>    <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb5-6"><a href=""></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Penguin Sizes"</span>, <span class="at">x =</span> <span class="st">"Flipper Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a><span class="co">#</span></span>
+<span id="cb5-2"><a href=""></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb5-3"><a href=""></a><span class="fu">library</span>(plotly)</span>
+<span id="cb5-4"><a href=""></a><span class="fu">library</span>(palmerpenguins)</span>
+<span id="cb5-5"><a href=""></a></span>
+<span id="cb5-6"><a href=""></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> flipper_length_mm, <span class="at">y =</span> body_mass_g, <span class="at">color =</span> species)) <span class="sc">+</span></span>
+<span id="cb5-7"><a href=""></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb5-8"><a href=""></a>    <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb5-9"><a href=""></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Penguin Size Comparison"</span>,</span>
+<span id="cb5-10"><a href=""></a>         <span class="at">x =</span> <span class="st">"Flipper Length (mm)"</span>,</span>
+<span id="cb5-11"><a href=""></a>         <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div class="fragment" data-tts-script="And here is the plot:">
@@ -505,7 +510,7 @@
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="temp_presentation_files/figure-revealjs/unnamed-chunk-4-1.png" width="480"></p>
+<p><img data-src="chalktalk_features_demo_files/figure-revealjs/unnamed-chunk-4-1.png" width="960"></p>
 </figure>
 </div>
 </div>
@@ -530,19 +535,19 @@
   </div>
 
   <script>window.backupDefine = window.define; window.define = undefined;</script>
-  <script src="temp_presentation_files/libs/revealjs/dist/reveal.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/dist/reveal.js"></script>
   <!-- reveal.js plugins -->
-  <script src="temp_presentation_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
-  <script src="temp_presentation_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
-  <script src="temp_presentation_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
-  <script src="temp_presentation_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
-  <script src="temp_presentation_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/plugin/quarto-support/support.js"></script>
   
 
-  <script src="temp_presentation_files/libs/revealjs/plugin/notes/notes.js"></script>
-  <script src="temp_presentation_files/libs/revealjs/plugin/search/search.js"></script>
-  <script src="temp_presentation_files/libs/revealjs/plugin/zoom/zoom.js"></script>
-  <script src="temp_presentation_files/libs/revealjs/plugin/math/math.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="chalktalk_features_demo_files/libs/revealjs/plugin/math/math.js"></script>
   <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
 
   <script>
