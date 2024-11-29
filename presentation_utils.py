@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Generate a slide deck with GPT-4o using the llm demo 
+# # Generate a slide deck with GPT-4o using the llm demo  
 
 # In[ ]:
 
