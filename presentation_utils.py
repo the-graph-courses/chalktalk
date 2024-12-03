@@ -3,7 +3,7 @@
 
 # # Generate a slide deck with GPT-4o using the llm demo  
 
-# In[ ]:
+# %%
 
 
 import os
@@ -31,7 +31,7 @@ Important:
 Please provide the output directly in the required format, without any additional explanations or JSON formatting.
 """
     completion = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[{"role": "user", "content": prompt}]
     )
     return completion.choices[0].message.content
@@ -41,10 +41,9 @@ def format_presentation_for_qmd(presentation):
     """Assuming presentation.content[0].text contains the markdown content."""
     qmd_content = """---
 title: "chalktalk Demo"
-format: revealjs
-execute:
-    echo: true
-    eval: false
+format: 
+    revealjs:
+        theme: moon
 ---
 
 """
@@ -67,7 +66,7 @@ execute:
 
 # # Render qmd to a revealjs presentation
 
-# In[ ]:
+# %%
 
 
 # | eval: false
@@ -78,7 +77,7 @@ from subprocess import call
 
 # # Voiceover
 
-# In[ ]:
+# %%
 
 
 # Voiceover with Parallel Processing
@@ -90,14 +89,12 @@ import requests
 from tempfile import gettempdir
 import concurrent.futures
 
-# Define your Azure Speech Service details
-my_subscription_key = os.getenv("AZURE_SPEECH_KEY")
 
 
 def fetch_voiceover_azure(
     script_lines,
     output_dir=gettempdir(),
-    subscription_key=my_subscription_key,
+    subscription_key=os.getenv("AZURE_SPEECH_KEY"),
     voice="en-US-AndrewMultilingualNeural",
     max_workers=20,
 ):
@@ -178,7 +175,7 @@ def fetch_voiceover_azure(
 
 # # Scrape HTML for TTS scripts and add audio elements
 
-# In[ ]:
+# %%
 
 
 import os
@@ -212,7 +209,7 @@ def extract_tts_fragments(html_content):
     # Convert the modified soup back to a string
     modified_html_content = str(soup)
     return results, modified_html_content
-
+ 
 
 # Example usage:
 # if __name__ == "__main__":
@@ -237,7 +234,7 @@ def extract_tts_fragments(html_content):
 
 # # Process fragments with Azure and get audio files
 
-# In[ ]:
+# %%
 
 
 import os
@@ -303,7 +300,7 @@ def process_fragments_with_azure(fragments, output_dir, html_dir, max_workers=20
 
 # # Insert audio elements into HTML
 
-# In[ ]:
+# %%
 
 
 import os
@@ -372,7 +369,7 @@ def insert_audio_elements(html_content, processed_fragments):
 
 # # Modify html for autoslide and controls
 
-# In[ ]:
+# %%
 
 
 from bs4 import BeautifulSoup
@@ -547,7 +544,7 @@ def modify_html_for_autoslide_and_controls(html_content):
 # # Complete workflow starting from a prompt for the AI model
 # 
 
-# In[ ]:
+# %%
 
 
 def create_presentation_from_prompt(
@@ -629,12 +626,15 @@ def create_presentation_from_prompt(
     return output_html
 
 
-# Example usage:
-# if __name__ == "__main__":
-#     prompt = "Types de données en R Programmation (Make sure your output is in French)"
-#     title = "Introduction aux Types de Données en R"
-#     final_presentation = create_presentation_from_prompt(
-#         prompt=prompt, title=title, name="r_datatypes_fr", num_slides=8
-#     )
-#     print(f"Final presentation available at: {final_presentation}")
 
+# %%
+# Example usage:
+if __name__ == "__main__":
+    prompt = "Personal Identity Problems (ethics)"
+    title = "Personal Identity Problems (ethics)"
+    final_presentation = create_presentation_from_prompt(
+        prompt=prompt, title=title, name="main_test", num_slides=8
+    )
+    print(f"Final presentation available at: {final_presentation}")
+
+# %%
