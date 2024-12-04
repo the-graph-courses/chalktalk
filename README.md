@@ -4,7 +4,7 @@
 
 This video was created from a simple Markdown file: [chalktalk_features_demo.qmd](https://github.com/the-graph-courses/chalktalk/blob/main/chalktalk_features_demo.qmd)
 
-![ChalkTalk Demo Video](https://github.com/user-attachments/assets/34d7c907-07ba-4f2d-b182-54950e8866ba)
+https://github.com/user-attachments/assets/34d7c907-07ba-4f2d-b182-54950e8866ba
 
 ## The Challenge
 
