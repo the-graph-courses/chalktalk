@@ -1,5 +1,3 @@
 # chalktalk
 
 Automated Tutorial Videos
-
-

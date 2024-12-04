@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
 
 # # Generate a slide deck with GPT-4o using the llm demo  
 
@@ -74,6 +72,40 @@ from subprocess import call
 
 # call(["quarto", "render", "test_presentation.qmd"])
 
+# %%
+import datetime
+import uuid
+import re
+
+def create_presentation_directory(title: str) -> tuple[str, str]:
+    """
+    Creates a unique directory for a presentation and its media assets.
+    
+    Args:
+        title: The presentation title
+        
+    Returns:
+        tuple: (base_dir, media_dir) paths
+    """
+    # Sanitize title: remove special chars, replace spaces with underscore
+    safe_title = re.sub(r'[^\w\s-]', '', title).strip().lower()
+    safe_title = re.sub(r'[-\s]+', '_', safe_title)
+    
+    # Generate timestamp and UUID
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    unique_id = uuid.uuid4().hex[:8]
+    
+    # Create directory name
+    dir_name = f"{safe_title}_{timestamp}_{unique_id}"
+    base_dir = os.path.join("presentations", dir_name)
+    media_dir = os.path.join(base_dir, "media")
+    
+    # Create directory structure
+    os.makedirs(os.path.join(media_dir, "audio"), exist_ok=True)
+    os.makedirs(os.path.join(media_dir, "video"), exist_ok=True)
+    
+    return base_dir, media_dir
+
 
 # # Voiceover
 
@@ -93,7 +125,7 @@ import concurrent.futures
 
 def fetch_voiceover_azure(
     script_lines,
-    output_dir=gettempdir(),
+    output_dir,  # This will now be the media/audio directory
     subscription_key=os.getenv("AZURE_SPEECH_KEY"),
     voice="en-US-AndrewMultilingualNeural",
     max_workers=20,
@@ -125,7 +157,7 @@ def fetch_voiceover_azure(
             return idx, None
         sanitized = re.sub(r"[^\w\s]", "", line)[:20].replace(" ", "_")
         file_name = f"{sanitized}_{uuid.uuid4()}.mp3"
-        file_path = os.path.join(output_dir, file_name)
+        file_path = os.path.join(output_dir, "audio", file_name)  # Updated path
         ssml = ssml_template.format(voice=voice, text=line)
 
         headers = {
@@ -173,7 +205,131 @@ def fetch_voiceover_azure(
 #     print("Generated audio files:", audio_files)
 
 
-# # Scrape HTML for TTS scripts and add audio elements
+# %%
+import os
+import time
+import uuid
+import requests
+from datetime import datetime
+
+def fetch_avatar_azure(
+    script_lines,
+    output_dir,  # This will now be the media/video directory
+    subscription_key=os.getenv("AZURE_SPEECH_KEY"),
+    speech_region="westus2"
+):
+    """
+    Fetches avatar videos from Azure Speech Service for each line in script_lines.
+    
+    Args:
+        script_lines (list): List of text strings to convert to avatar videos
+        output_dir (str): Directory to save the video files
+        subscription_key (str): Azure subscription key
+        speech_region (str): Azure region (e.g., "westus2")
+    
+    Returns:
+        list: Paths to the generated video files
+    """
+    # Pre-allocate list for paths
+    avatar_paths = [None] * len(script_lines)
+    
+    # Ensure output directory exists
+    video_dir = os.path.join(output_dir, "video")
+    os.makedirs(video_dir, exist_ok=True)
+    
+    # Define Azure URL base
+    url_base = f"https://{speech_region}.api.cognitive.microsoft.com"
+    
+    for i, script_line in enumerate(script_lines):
+        # Skip empty or None lines
+        if not script_line:
+            avatar_paths[i] = None
+            continue
+            
+        # Generate a unique job ID
+        job_id = f"job-{datetime.now().strftime('%Y%m%d%H%M%S')}-{i}"
+        
+        # Prepare the payload
+        payload = {
+            "inputKind": "PlainText",
+            "inputs": [
+                {"content": script_line}
+            ],
+            "synthesisConfig": {
+                "voice": "en-US-AndrewMultilingualNeural"
+            },
+            "avatarConfig": {
+                "talkingAvatarCharacter": "harry",
+                "talkingAvatarStyle": "business",
+                "videoFormat": "Mp4",
+                "videoCodec": "h264",
+                "bitrateKbps": 900,
+                "backgroundColor": "#191919FF"
+            }
+        }
+
+        # Send the request
+        headers = {
+            "Ocp-Apim-Subscription-Key": subscription_key,
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.put(
+            f"{url_base}/avatar/batchsyntheses/{job_id}?api-version=2024-08-01",
+            headers=headers,
+            json=payload
+        )
+        
+        if response.status_code >= 400:
+            raise Exception(f"Job submission failed for script line {i}: {response.text}")
+        
+        print(f"Job submitted successfully for script line {i}. Processing...")
+        
+        # Poll for job status
+        while True:
+            time.sleep(1)
+            result = requests.get(
+                f"{url_base}/avatar/batchsyntheses/{job_id}?api-version=2024-08-01",
+                headers={"Ocp-Apim-Subscription-Key": subscription_key}
+            )
+            
+            content = result.json()
+            if content["status"] == "Succeeded":
+                video_url = content["outputs"]["result"]
+                print(f"Ready for script line {i}. Synthesized video: {video_url}")
+                break
+            elif content["status"] == "Failed":
+                raise Exception(f"Synthesis failed for script line {i}: {content}")
+            else:
+                print(f"Processing script line {i}. Status: {content['status']}")
+        
+        # Download video
+        avatar_path = os.path.join(video_dir, f"{job_id}.mp4")
+        video_response = requests.get(video_url)
+        with open(avatar_path, "wb") as f:
+            f.write(video_response.content)
+        
+        avatar_paths[i] = avatar_path
+    
+    return avatar_paths
+
+
+# %%
+# Example usage:
+# if __name__ == "__main__":
+#     script_lines = [
+#         "Welcome to this presentation about artificial intelligence.",
+#     ]
+    
+#     output_directory = os.path.join(os.getcwd(), "avatar_videos")
+    
+#     video_files = fetch_avatar_azure(
+#         script_lines,
+#         output_dir=output_directory
+#     )
+    
+#     print("Generated video files:", video_files)
+
 
 # %%
 
@@ -184,92 +340,94 @@ import uuid
 from bs4 import BeautifulSoup
 
 
-def extract_tts_fragments(html_content):
+def extract_media_fragments(html_content):
     """
-    Extracts fragments with TTS scripts from an HTML document and ensures uniqueness.
+    Extracts fragments with TTS and TTV scripts from an HTML document and ensures uniqueness.
 
     Parameters:
     - html_content (str): The HTML content to parse.
 
     Returns:
-    - list of tuples: Each tuple contains (script_text, fragment_element, unique_id).
+    - list of tuples: Each tuple contains (script_text, fragment_element, unique_id, media_type).
     - str: Modified HTML content with unique IDs added to fragments.
     """
     soup = BeautifulSoup(html_content, "html.parser")
-    fragments = soup.find_all("div", class_="fragment", attrs={"data-tts-script": True})
+    fragments = []
 
-    # Add unique identifiers to each fragment
-    results = []
-    for idx, fragment in enumerate(fragments):
-        script_text = fragment.get("data-tts-script")
+    # Find fragments with data-tts
+    tts_fragments = soup.find_all("div", class_="fragment", attrs={"data-tts": True})
+    for idx, fragment in enumerate(tts_fragments):
+        script_text = fragment.get("data-tts")
         unique_id = f"tts_{idx}_{uuid.uuid4().hex[:8]}"
         fragment["data-tts-id"] = unique_id  # Add unique ID to the fragment
-        results.append((script_text, fragment, unique_id))
+        fragments.append((script_text, fragment, unique_id, "tts"))
 
-    # Convert the modified soup back to a string
-    modified_html_content = str(soup)
-    return results, modified_html_content
- 
+    # Find fragments with data-ttv
+    ttv_fragments = soup.find_all("div", class_="fragment", attrs={"data-ttv": True})
+    for idx, fragment in enumerate(ttv_fragments):
+        script_text = fragment.get("data-ttv")
+        unique_id = f"ttv_{idx}_{uuid.uuid4().hex[:8]}"
+        fragment["data-ttv-id"] = unique_id  # Add unique ID to the fragment
+        fragments.append((script_text, fragment, unique_id, "ttv"))
+
+    # Convert the modified soup back to a string with proper encoding
+    modified_html_content = soup.prettify(formatter="html")
+    return fragments, modified_html_content
 
 # Example usage:
 # if __name__ == "__main__":
 #     html_example = """
 #     <section>
-#     <div class="fragment" data-tts-script="Hello world">
+#     <div class="fragment" data-tts="Hello world">
 #         <p>Hello world</p>
+#     </div>
+#     <div class="fragment" data-ttv="Video script here">
+#         <video src="example.mp4"></video>
 #     </div>
 #     </section>
 #     <section>
 #     <p>Random text outside of fragment</p>
-#     <div class="fragment" data-tts-script="Second fragment">
+#     <div class="fragment" data-tts="Second fragment">
 #         <p>Second text</p>
 #     </div>
 #     </section>
 #     """
-#     fragments, modified_html = extract_tts_fragments(html_example)
+#     fragments, modified_html = extract_media_fragments(html_example)
 #     print("Extracted fragments and modified HTML:")
-#     for frag in fragments:
-#         print(f"Script: {frag[0]}, Unique ID: {frag[2]}")
+#     for script, fragment, unique_id, media_type in fragments:
+#         print(f"Script: {script}, Type: {media_type}, Unique ID: {unique_id}")
 
-
-# # Process fragments with Azure and get audio files
 
 # %%
-
-
-import os
-import concurrent.futures
-
-
 def process_fragments_with_azure(fragments, output_dir, html_dir, max_workers=20):
     """
-    Sends TTS scripts to Azure and returns audio paths along with fragment elements and unique IDs.
-    Uses concurrent processing to speed up the operation.
-
-    Parameters:
-    - fragments (list of tuples): Output from extract_tts_fragments.
-    - output_dir (str): Directory to save the audio files.
-    - html_dir (str): Directory where the HTML file will be saved.
-    - max_workers (int): Maximum number of workers for concurrent processing.
+    Processes TTS and TTV scripts with Azure and returns media paths along with fragment elements and unique IDs.
 
     Returns:
-    - list of tuples: Each tuple contains (absolute_audio_path, relative_audio_path, fragment_element, unique_id).
+    - list of tuples: Each tuple contains (absolute_media_path, relative_media_path, fragment_element, unique_id, media_type).
     """
 
     def process_fragment(frag_tuple):
-        script, fragment, unique_id = frag_tuple
+        script, fragment, unique_id, media_type = frag_tuple
         if script:
             try:
-                audio_paths = fetch_voiceover_azure([script], output_dir=output_dir)
-                if audio_paths and audio_paths[0]:
-                    absolute_audio_path = audio_paths[0]
-                    # Calculate relative path from HTML file to audio file
-                    relative_audio_path = os.path.relpath(absolute_audio_path, html_dir)
+                if media_type == "tts":
+                    media_paths = fetch_voiceover_azure([script], output_dir=output_dir)
+                elif media_type == "ttv":
+                    media_paths = fetch_avatar_azure([script], output_dir=output_dir)
+                else:
+                    return None
+
+                if media_paths and media_paths[0]:
+                    absolute_media_path = media_paths[0]
+                    # Calculate relative path from HTML file to media file
+                    relative_media_path = os.path.relpath(absolute_media_path, html_dir)
                     return (
-                        absolute_audio_path,
-                        relative_audio_path,
+                        absolute_media_path,
+                        relative_media_path,
                         fragment,
                         unique_id,
+                        media_type,
                     )
             except Exception as e:
                 print(f"Error processing fragment {unique_id}: {e}")
@@ -302,69 +460,85 @@ def process_fragments_with_azure(fragments, output_dir, html_dir, max_workers=20
 
 # %%
 
-
+import moviepy
 import os
 import librosa
 from bs4 import BeautifulSoup
 
-
-def insert_audio_elements(html_content, processed_fragments):
+def insert_media_elements(html_content, processed_fragments):
     """
-    Inserts audio elements into the HTML using unique identifiers for precise matching.
-
-    Parameters:
-    - html_content (str): The HTML content to modify.
-    - processed_fragments (list of tuples): Output from process_fragments_with_azure.
+    Inserts audio or video elements into the HTML using unique identifiers for precise matching.
 
     Returns:
-    - str: Modified HTML content with audio elements inserted.
+    - str: Modified HTML content with media elements inserted.
     """
     soup = BeautifulSoup(html_content, "html.parser")
 
     for (
-        absolute_audio_path,
-        relative_audio_path,
+        absolute_media_path,
+        relative_media_path,
         fragment_elem,
         unique_id,
+        media_type,
     ) in processed_fragments:
 
         # Find the corresponding fragment using the unique ID
-        matching_fragment = soup.find("div", attrs={"data-tts-id": unique_id})
+        matching_fragment = soup.find("div", attrs={f"data-{media_type}-id": unique_id})
 
         if matching_fragment:
-            # Get actual audio duration using librosa
-            if os.path.isfile(absolute_audio_path):
-                duration_sec = librosa.get_duration(path=absolute_audio_path)
+            # Get actual media duration
+            if os.path.isfile(absolute_media_path):
+                if media_type == "tts":
+                    duration_sec = librosa.get_duration(path=absolute_media_path)
+                elif media_type == "ttv":
+                    from moviepy import VideoFileClip
+                    try:
+                        clip = VideoFileClip(absolute_media_path)
+                        duration_sec = clip.duration
+                        clip.close()
+                    except Exception as e:
+                        print(f"Error getting video duration: {e}")
+                        continue
             else:
-                print(f"Audio file not found: {absolute_audio_path}")
+                print(f"Media file not found: {absolute_media_path}")
                 continue
             duration_ms = int(duration_sec * 1000)
 
             # Set the autoslide attribute
-            matching_fragment["data-autoslide"] = str(duration_ms)
+            matching_fragment["data-autoslide"] = f"{int(duration_ms)}"
 
-            # Create audio element
-            audio = soup.new_tag("audio", attrs={"data-autoplay": ""})
-            source = soup.new_tag(
-                "source", attrs={"src": relative_audio_path, "type": "audio/mpeg"}
-            )
-            audio.append(source)
+            if media_type == "tts":
+                # Create audio element
+                media_tag = soup.new_tag("audio", attrs={"data-autoplay": ""})
+                source = soup.new_tag(
+                    "source", attrs={"src": relative_media_path, "type": "audio/mpeg"}
+                )
+                media_tag.append(source)
+            elif media_type == "ttv":
+                # Create video element
+                media_tag = soup.new_tag(
+                    "video", attrs={"data-autoplay": "", "playsinline": ""})
+                source = soup.new_tag(
+                    "source", attrs={"src": relative_media_path, "type": "video/mp4"}
+                )
+                media_tag.append(source)
+            else:
+                continue
 
-            # Add audio element to the fragment
-            matching_fragment.append(audio)
+            # Add media element to the fragment
+            matching_fragment.append(media_tag)
 
             print(
-                f"Added audio {relative_audio_path} with duration {duration_ms}ms to fragment ID: {unique_id}"
+                f"Added {media_type} {relative_media_path} with duration {duration_ms}ms to fragment ID: {unique_id}"
             )
 
-    return str(soup)
-
+    return soup.prettify(formatter="html")
 
 # Example usage:
 # if __name__ == "__main__":
-#     modified_html_with_audio = insert_audio_elements(modified_html, processed_fragments)
-#     print("Modified HTML with audio elements:")
-#     print(modified_html_with_audio)
+#     modified_html_with_media = insert_media_elements(modified_html, processed_fragments)
+#     print("Modified HTML with media elements:")
+#     print(modified_html_with_media)
 
 
 # # Modify html for autoslide and controls
@@ -531,7 +705,7 @@ def modify_html_for_autoslide_and_controls(html_content):
         body_tag.append(volume_slider)
 
     # Return the modified HTML
-    return str(soup)
+    return soup.prettify(formatter="html")
 
 
 # Example usage:
@@ -546,95 +720,70 @@ def modify_html_for_autoslide_and_controls(html_content):
 
 # %%
 
-
 def create_presentation_from_prompt(
-    prompt: str, title: str = None, name: str = "presentation", num_slides: int = 5
+    prompt: str, 
+    title: str = None, 
+    name: str = "presentation", 
+    num_slides: int = 5
 ):
     """
     Complete workflow to create a voiced presentation from a prompt.
-
-    Parameters:
-    - prompt: str - The topic/description for the presentation
-    - title: str - Title of the presentation (default: same as prompt)
-    - name: str - Base name to use for generated files (default: "presentation")
-    - num_slides: int - Number of slides to generate (default: 5)
-
-    Returns:
-    - str: Path to the final HTML presentation with voiceover
+    Now uses dedicated directories for each presentation.
     """
-    import os
-    from pathlib import Path
-
     # Use prompt as title if none provided
     if title is None:
-        title = prompt
-
-    # Step 1: Generate the presentation content
+        title = prompt[:50]  # Use first 50 chars of prompt as title
+        
+    # Create unique directory for this presentation
+    base_dir, media_dir = create_presentation_directory(title)
+    
+    # Generate and save QMD
     presentation = generate_slides(
-        topic=prompt, title=title, num_slides=num_slides, chalktalk_demo=chalktalk_demo
+        topic=prompt, 
+        title=title, 
+        num_slides=num_slides, 
+        chalktalk_demo=chalktalk_demo
     )
-
-    # Step 2: Create QMD file
+    
     qmd_content = format_presentation_for_qmd(presentation)
-    temp_qmd = f"{name}.qmd"
-    with open(temp_qmd, "w") as f:
+    qmd_file = os.path.join(base_dir, f"{name}.qmd")
+    with open(qmd_file, "w") as f:
         f.write(qmd_content)
-
-    # Step 3: Render QMD to HTML
-    from subprocess import call
-
-    call(["quarto", "render", temp_qmd])
-
-    # Get the generated HTML file path
-    html_file = temp_qmd.replace(".qmd", ".html")
-
-    # Step 4: Process the HTML with voiceover
-    input_dir = os.path.dirname(os.path.abspath(html_file))
-    output_html = os.path.join(input_dir, f"{name}_voiced.html")
-
-    # Create output directory for audio files
-    audio_dir = os.path.join(input_dir, f"audio_{name}")
-    os.makedirs(audio_dir, exist_ok=True)
-
-    # Read the original HTML file
+        
+    # Render QMD to HTML
+    call(["quarto", "render", qmd_file])
+    
+    # Process HTML with media
+    html_file = qmd_file.replace(".qmd", ".html")
     with open(html_file, "r", encoding="utf-8") as f:
         html_content = f.read()
-
-    # Extract fragments with TTS scripts and get modified HTML content
-    fragments, modified_html_content = extract_tts_fragments(html_content)
-    print(f"Found {len(fragments)} fragments with TTS scripts")
-
-    # Process fragments with Azure and get audio files
-    processed_fragments = process_fragments_with_azure(fragments, audio_dir, input_dir)
-    print(f"Processed {len(processed_fragments)} audio files")
-
-    # Insert audio elements into the modified HTML content
-    modified_html = insert_audio_elements(modified_html_content, processed_fragments)
-
-    # Add playback controls and modify Reveal.initialize
+        
+    fragments, modified_html = extract_media_fragments(html_content)
+    processed_fragments = process_fragments_with_azure(
+        fragments, 
+        media_dir, 
+        base_dir  # Use base_dir as html_dir for relative paths
+    )
+    
+    modified_html = insert_media_elements(modified_html, processed_fragments)
     final_html = modify_html_for_autoslide_and_controls(modified_html)
-
-    # Save the modified HTML
+    
+    # Save final HTML
+    output_html = os.path.join(base_dir, f"{name}_final.html")
     with open(output_html, "w", encoding="utf-8") as f:
         f.write(final_html)
-    print(f"Modified HTML saved to {output_html}")
-
-    # Clean up temporary QMD file
-    Path(temp_qmd).unlink()
-    Path(html_file).unlink()
-
+        
     return output_html
 
 
 
 # %%
 # Example usage:
-if __name__ == "__main__":
-    prompt = "Personal Identity Problems (ethics)"
-    title = "Personal Identity Problems (ethics)"
-    final_presentation = create_presentation_from_prompt(
-        prompt=prompt, title=title, name="main_test", num_slides=8
-    )
-    print(f"Final presentation available at: {final_presentation}")
-
+# if __name__ == "__main__":
+#     prompt = "Personal Identity Problems (ethics)"
+#     title = "Personal Identity Problems (ethics)"
+#     final_presentation = create_presentation_from_prompt(
+#         prompt=prompt, title=title, name="main_test", num_slides=4
+#     )
+#     print(f"Final presentation available at: {final_presentation}")
 # %%

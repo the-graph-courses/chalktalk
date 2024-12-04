@@ -1,51 +1,61 @@
+## Welcome
+
+::: {.fragment ttv="Welcome to this guide on using ChalkTalk. As you can see, ChalkTalk allows you to convert text to engaging presentations, with audio, animated slides, and video avatars."}
+:::
 
 ## Using Fragments and TTS
 
-::: {.fragment tts-script="Welcome to this guide on using fragments and text-to-speech in SaySlides"}
-:::
-
-::: {.fragment tts-script="Here's the basic syntax for a fragment with text to speech. You initiate a div with the class 'fragment' and then you include your speech text in the tts-script attribute."}
+::: {.fragment tts="Here's the basic syntax for ChalkTalk. You initiate a div with the class 'fragment' and then you include your speech text in the tts attribute."}
 The basic syntax looks like this:
 ```markdown
-::: {.fragment tts-script="Your speech text here"}
+::: {.fragment tts="Your speech text here"}
 Your visible content here
 :::
 ```
 :::
 
-::: {.fragment tts-script="The speech text can be different from the displayed text!"}
+::: {.fragment tts="The speech text can be different from the displayed text!"}
 Text ≠ Speech
+:::
+
+::: {.fragment tts="For videos, you use the TTV attribute instead of TTS."}
+
+```markdown
+::: {.fragment ttv="Your speech text here"}
+:::
+```
+
 :::
 
 ## Fragment Examples
 
-::: {.fragment tts-script="You can use fragments with different types of content"}
+::: {.fragment tts="You can use fragments with different types of content"}
 You can use fragments with:
 :::
 
-::: {.fragment tts-script="Regular text and paragraphs"}
+::: {.fragment tts="Regular text and paragraphs"}
 - Regular text
 :::
 
-::: {.fragment tts-script="Code blocks and examples. This is kind of our target use case at the moment."}
+::: {.fragment tts="Code blocks and examples. This is kind of our target use case at the moment."}
 - Code blocks and examples
 :::
 
-::: {.fragment tts-script="And you can add images, like this one of a cat"}
+::: {.fragment tts="And you can add images, like this one of a cat"}
 - Images
 ![](https://placecats.com/300/200)
 :::
 
 ## Code Example
 
-::: {.fragment tts-script="Here, we add text to speech to a code block. The Python code below defines a dictionary with a key-value pair."}
+::: {.fragment tts="Here, we add text to speech to a code block. The Python code below defines a dictionary with a key-value pair."}
 
 ```{python}
 my_dict = {"name": "Alice", "age": 30}
 ```
 :::
 
-::: {.fragment tts-script="We can access the value associated with the key `age`. Note that the code can actually be executed when you render the slide."}
+::: {.fragment tts="We can access the value associated with the key `age`. Note that the code can actually be executed when you render the slide."}
 ```{python}
 my_dict["age"]
 ```
@@ -53,12 +63,12 @@ my_dict["age"]
 
 ## Math Example
 
-::: {.fragment tts-script="You can even add text to speech to mathematical equations. For example, here's the quadratic formula. Do you remember how to use it?"}
+::: {.fragment tts="You can even add text to speech to mathematical equations. For example, here's the quadratic formula. Do you remember how to use it?"}
 
 The quadratic formula:
 $$ x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$
 :::
 
 
-::: {.fragment tts-script="That's it for now. Enjoy the tool!"}
+::: {.fragment tts="That's it for now. Enjoy the tool!"}
 :::
