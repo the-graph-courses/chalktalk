@@ -4,6 +4,8 @@
 
 This video was created from a simple Markdown file: [chalktalk_features_demo.qmd](https://github.com/the-graph-courses/chalktalk/blob/main/chalktalk_features_demo.qmd)
 
+AUDIO ON: Remember to click the volume (🔊) button at the bottom right of the video to hear the audio!
+
 https://github.com/user-attachments/assets/34d7c907-07ba-4f2d-b182-54950e8866ba
 
 ## The Challenge
@@ -12,7 +14,7 @@ Even as teaching tools have evolved from chalkboards to smartboards, and pencils
 
 The recent revolution in Large Language Models (LLMs) may finally bridge this gap by adapting content to individual learning needs.
 
-However, current AI models primarily generate text, while research shows video content can be more effective for learning \[https://doi.org/10.3102/0034654321990713\].
+However, current AI models primarily generate text, while research shows video content can be more effective for learning [1](https://doi.org/10.3102/0034654321990713).
 
 ## Introducing ChalkTalk: From Markdown to Video
 
