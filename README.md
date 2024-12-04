@@ -1,6 +1,6 @@
 # ChalkTalk: Transforming Education with AI-Powered Video Creation
 
-## Video Example
+## 1-Minute Video Example
 
 This video was created from a simple Markdown file: [chalktalk_features_demo.qmd](https://github.com/the-graph-courses/chalktalk/blob/main/chalktalk_features_demo.qmd)
 
@@ -42,7 +42,7 @@ Given the importance of this area, similar tools are being created, such as [Syn
 -   **Proprietary**: Being closed-source, they require paid subscriptions, creating barriers for widespread adoption.
 -   **Commercial Focus**: They are primarily designed for sales and enterprise use cases like automated advertising and employee onboarding, and lack the ability to handle technical academic or educational content.
 
-Automated video generation from markdown slides has been attempted before, notably with the [Ari R package](https://chatgpt.com/c/673fc046-9540-8013-822c-882f3b7bc7b9#). However, this approach predates key technological advancements such as modern LLMs, Quarto, lifelike text-to-speech (TTS), and vision-language models, limiting its effectiveness.
+Automated video generation from markdown slides has been attempted before, notably with the [Ari R package](https://github.com/jhudsl/ari). However, this approach predates key technological advancements such as modern LLMs, Quarto, lifelike text-to-speech (TTS), and vision-language models, limiting its effectiveness.
 
 The table below compares some of these products with what we aim to build with ChalkTalk.
 
@@ -61,3 +61,7 @@ The table below compares some of these products with what we aim to build with C
 We are currently seeking funding to support the development of the core ChalkTalk libraries and AI extensions, which will be open-source.
 
 Since running TTS and LLM locally can be technically challenging for individual users, we are considering offering a hosted version of ChalkTalk with a subscription model. This hosted service will provide an easy-to-use interface and manage all technical aspects, making it accessible to educators without technical expertise. Over time, this could sustain the development of the open-source libraries.
+
+## Getting Started
+
+Run the app with `python app.py`. It assumes you have an Azure key for text to speech, and an OpenAI key for LLM access stored in a `.env` file.
