@@ -1,14 +1,14 @@
-
-# # Generate a slide deck with GPT-4o using the llm demo  
+# # Generate a slide deck with GPT-4o using the llm demo
 
 # %%
 
 
 import os
-from openai import OpenAI
+import requests
+import json
 
 # Initialize the OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 chalktalk_demo = open("assets/chalktalk_demo_for_llm.qmd").read()
 
@@ -28,11 +28,37 @@ Important:
 
 Please provide the output directly in the required format, without any additional explanations or JSON formatting.
 """
-    completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return completion.choices[0].message.content
+    # completion = client.chat.completions.create(
+    #     model="o1",
+    #     messages=[{"role": "user", "content": prompt}]
+    # )
+    # return completion.choices[0].message.content
+
+    # Add OpenRouter API call
+    openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+    if not openrouter_api_key:
+        raise ValueError("OPENROUTER_API_KEY environment variable not set.")
+
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {openrouter_api_key}",
+    }
+    payload = {
+        "model": "google/gemini-2.5-pro-preview-03-25",
+        "messages": [{"role": "user", "content": prompt}],
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    response.raise_for_status()
+
+    reply = response.json()
+    content = reply.get("choices", [{}])[0].get("message", {}).get("content")
+
+    if content is None:
+        raise ValueError("Failed to extract content from OpenRouter API response.")
+
+    return content
 
 
 def format_presentation_for_qmd(presentation):
@@ -77,33 +103,34 @@ import datetime
 import uuid
 import re
 
+
 def create_presentation_directory(title: str) -> tuple[str, str]:
     """
     Creates a unique directory for a presentation and its media assets.
-    
+
     Args:
         title: The presentation title
-        
+
     Returns:
         tuple: (base_dir, media_dir) paths
     """
     # Sanitize title: remove special chars, replace spaces with underscore
-    safe_title = re.sub(r'[^\w\s-]', '', title).strip().lower()
-    safe_title = re.sub(r'[-\s]+', '_', safe_title)
-    
+    safe_title = re.sub(r"[^\w\s-]", "", title).strip().lower()
+    safe_title = re.sub(r"[-\s]+", "_", safe_title)
+
     # Generate timestamp and UUID
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     unique_id = uuid.uuid4().hex[:8]
-    
+
     # Create directory name
     dir_name = f"{safe_title}_{timestamp}_{unique_id}"
     base_dir = os.path.join("presentations", dir_name)
     media_dir = os.path.join(base_dir, "media")
-    
+
     # Create directory structure
     os.makedirs(os.path.join(media_dir, "audio"), exist_ok=True)
     os.makedirs(os.path.join(media_dir, "video"), exist_ok=True)
-    
+
     return base_dir, media_dir
 
 
@@ -120,7 +147,6 @@ import uuid
 import requests
 from tempfile import gettempdir
 import concurrent.futures
-
 
 
 def fetch_voiceover_azure(
@@ -212,87 +238,86 @@ import uuid
 import requests
 from datetime import datetime
 
+
 def fetch_avatar_azure(
     script_lines,
     output_dir,  # This will now be the media/video directory
     subscription_key=os.getenv("AZURE_SPEECH_KEY"),
-    speech_region="westus2"
+    speech_region="westus2",
 ):
     """
     Fetches avatar videos from Azure Speech Service for each line in script_lines.
-    
+
     Args:
         script_lines (list): List of text strings to convert to avatar videos
         output_dir (str): Directory to save the video files
         subscription_key (str): Azure subscription key
         speech_region (str): Azure region (e.g., "westus2")
-    
+
     Returns:
         list: Paths to the generated video files
     """
     # Pre-allocate list for paths
     avatar_paths = [None] * len(script_lines)
-    
+
     # Ensure output directory exists
     video_dir = os.path.join(output_dir, "video")
     os.makedirs(video_dir, exist_ok=True)
-    
+
     # Define Azure URL base
     url_base = f"https://{speech_region}.api.cognitive.microsoft.com"
-    
+
     for i, script_line in enumerate(script_lines):
         # Skip empty or None lines
         if not script_line:
             avatar_paths[i] = None
             continue
-            
+
         # Generate a unique job ID
         job_id = f"job-{datetime.now().strftime('%Y%m%d%H%M%S')}-{i}"
-        
+
         # Prepare the payload
         payload = {
             "inputKind": "PlainText",
-            "inputs": [
-                {"content": script_line}
-            ],
-            "synthesisConfig": {
-                "voice": "en-US-AndrewMultilingualNeural"
-            },
+            "inputs": [{"content": script_line}],
+            "synthesisConfig": {"voice": "en-US-AndrewMultilingualNeural"},
             "avatarConfig": {
                 "talkingAvatarCharacter": "harry",
                 "talkingAvatarStyle": "business",
                 "videoFormat": "Mp4",
                 "videoCodec": "h264",
                 "bitrateKbps": 900,
-                "backgroundColor": "#191919FF"
-            }
+                "backgroundColor": "#191919FF",
+            },
         }
 
         # Send the request
         headers = {
             "Ocp-Apim-Subscription-Key": subscription_key,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
-        
+
         response = requests.put(
             f"{url_base}/avatar/batchsyntheses/{job_id}?api-version=2024-08-01",
             headers=headers,
-            json=payload
+            json=payload,
         )
-        
+
         if response.status_code >= 400:
-            raise Exception(f"Job submission failed for script line {i}: {response.text}")
-        
+            raise Exception(
+                f"Job submission failed for script line {i}: {response.text}"
+            )
+
         print(f"Job submitted successfully for script line {i}. Processing...")
-        
+
         # Poll for job status
         while True:
             time.sleep(1)
             result = requests.get(
                 f"{url_base}/avatar/batchsyntheses/{job_id}?api-version=2024-08-01",
-                headers={"Ocp-Apim-Subscription-Key": subscription_key}
+                headers={"Ocp-Apim-Subscription-Key": subscription_key},
             )
-            
+
             content = result.json()
             if content["status"] == "Succeeded":
                 video_url = content["outputs"]["result"]
@@ -302,15 +327,15 @@ def fetch_avatar_azure(
                 raise Exception(f"Synthesis failed for script line {i}: {content}")
             else:
                 print(f"Processing script line {i}. Status: {content['status']}")
-        
+
         # Download video
         avatar_path = os.path.join(video_dir, f"{job_id}.mp4")
         video_response = requests.get(video_url)
         with open(avatar_path, "wb") as f:
             f.write(video_response.content)
-        
+
         avatar_paths[i] = avatar_path
-    
+
     return avatar_paths
 
 
@@ -320,14 +345,14 @@ def fetch_avatar_azure(
 #     script_lines = [
 #         "Welcome to this presentation about artificial intelligence.",
 #     ]
-    
+
 #     output_directory = os.path.join(os.getcwd(), "avatar_videos")
-    
+
 #     video_files = fetch_avatar_azure(
 #         script_lines,
 #         output_dir=output_directory
 #     )
-    
+
 #     print("Generated video files:", video_files)
 
 
@@ -373,6 +398,7 @@ def extract_media_fragments(html_content):
     # Convert the modified soup back to a string with proper encoding
     modified_html_content = soup.prettify(formatter="html")
     return fragments, modified_html_content
+
 
 # Example usage:
 # if __name__ == "__main__":
@@ -465,6 +491,7 @@ import os
 import librosa
 from bs4 import BeautifulSoup
 
+
 def insert_media_elements(html_content, processed_fragments):
     """
     Inserts audio or video elements into the HTML using unique identifiers for precise matching.
@@ -492,6 +519,7 @@ def insert_media_elements(html_content, processed_fragments):
                     duration_sec = librosa.get_duration(path=absolute_media_path)
                 elif media_type == "ttv":
                     from moviepy import VideoFileClip
+
                     try:
                         clip = VideoFileClip(absolute_media_path)
                         duration_sec = clip.duration
@@ -517,7 +545,8 @@ def insert_media_elements(html_content, processed_fragments):
             elif media_type == "ttv":
                 # Create video element
                 media_tag = soup.new_tag(
-                    "video", attrs={"data-autoplay": "", "playsinline": ""})
+                    "video", attrs={"data-autoplay": "", "playsinline": ""}
+                )
                 source = soup.new_tag(
                     "source", attrs={"src": relative_media_path, "type": "video/mp4"}
                 )
@@ -533,6 +562,7 @@ def insert_media_elements(html_content, processed_fragments):
             )
 
     return soup.prettify(formatter="html")
+
 
 # Example usage:
 # if __name__ == "__main__":
@@ -716,15 +746,13 @@ def modify_html_for_autoslide_and_controls(html_content):
 
 
 # # Complete workflow starting from a prompt for the AI model
-# 
+#
 
 # %%
 
+
 def create_presentation_from_prompt(
-    prompt: str, 
-    title: str = None, 
-    name: str = "presentation", 
-    num_slides: int = 5
+    prompt: str, title: str = None, name: str = "presentation", num_slides: int = 5
 ):
     """
     Complete workflow to create a voiced presentation from a prompt.
@@ -733,48 +761,42 @@ def create_presentation_from_prompt(
     # Use prompt as title if none provided
     if title is None:
         title = prompt[:50]  # Use first 50 chars of prompt as title
-        
+
     # Create unique directory for this presentation
     base_dir, media_dir = create_presentation_directory(title)
-    
+
     # Generate and save QMD
     presentation = generate_slides(
-        topic=prompt, 
-        title=title, 
-        num_slides=num_slides, 
-        chalktalk_demo=chalktalk_demo
+        topic=prompt, title=title, num_slides=num_slides, chalktalk_demo=chalktalk_demo
     )
-    
+
     qmd_content = format_presentation_for_qmd(presentation)
     qmd_file = os.path.join(base_dir, f"{name}.qmd")
     with open(qmd_file, "w") as f:
         f.write(qmd_content)
-        
+
     # Render QMD to HTML
     call(["quarto", "render", qmd_file])
-    
+
     # Process HTML with media
     html_file = qmd_file.replace(".qmd", ".html")
     with open(html_file, "r", encoding="utf-8") as f:
         html_content = f.read()
-        
+
     fragments, modified_html = extract_media_fragments(html_content)
     processed_fragments = process_fragments_with_azure(
-        fragments, 
-        media_dir, 
-        base_dir  # Use base_dir as html_dir for relative paths
+        fragments, media_dir, base_dir  # Use base_dir as html_dir for relative paths
     )
-    
+
     modified_html = insert_media_elements(modified_html, processed_fragments)
     final_html = modify_html_for_autoslide_and_controls(modified_html)
-    
+
     # Save final HTML
     output_html = os.path.join(base_dir, f"{name}_final.html")
     with open(output_html, "w", encoding="utf-8") as f:
         f.write(final_html)
-        
-    return output_html
 
+    return output_html
 
 
 # %%
