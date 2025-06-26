@@ -21,6 +21,10 @@
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" onload="onScriptLoad()"
         onerror="console.error('Failed to load PptxGenJS')"></script>
 
+    <!-- GSAP for simple slide animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" onload="onScriptLoad()"
+        onerror="console.error('Failed to load GSAP')"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -321,7 +325,8 @@
             const libs = [
                 { name: 'GrapesJS', check: () => typeof grapesjs !== 'undefined' },
                 { name: 'Reveal.js', check: () => typeof Reveal !== 'undefined' },
-                { name: 'PptxGenJS', check: () => typeof PptxGenJS !== 'undefined' }
+                { name: 'PptxGenJS', check: () => typeof PptxGenJS !== 'undefined' },
+                { name: 'GSAP', check: () => typeof gsap !== 'undefined' }
             ];
 
             libs.forEach(lib => {
@@ -332,7 +337,7 @@
 
         // Wait for all scripts to load
         let scriptsLoaded = 0;
-        const totalScripts = 3;
+        const totalScripts = 4;
 
         function onScriptLoad() {
             scriptsLoaded++;
@@ -529,7 +534,17 @@
             alert('Slide edits saved! You can now view them in Tab 3.');
         }
 
-        // Reveal.js Presentation (Tab 3)  
+        // Reveal.js Presentation (Tab 3)
+        function animateSlide(slideEl) {
+            if (!slideEl || typeof gsap === 'undefined') return;
+            gsap.fromTo(slideEl.children, { opacity: 0, y: 30 }, {
+                opacity: 1,
+                y: 0,
+                duration: 0.6,
+                stagger: 0.1
+            });
+        }
+
         function updateRevealSlides() {
             if (typeof Reveal === 'undefined') {
                 console.error('Reveal.js not loaded');
@@ -569,7 +584,12 @@
                     transition: 'slide'
                 });
 
+                reveal.on('slidechanged', event => {
+                    animateSlide(event.currentSlide);
+                });
+
                 reveal.initialize();
+                animateSlide(reveal.getCurrentSlide());
                 console.log('Reveal.js initialized successfully');
             } catch (error) {
                 console.error('Failed to initialize Reveal.js:', error);
