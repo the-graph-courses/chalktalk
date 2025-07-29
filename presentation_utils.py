@@ -7,6 +7,7 @@ import os
 import requests
 import json
 from datetime import datetime
+from local_settings import ELEVENLABS_API_KEY, OPENROUTER_API_KEY
 
 # Initialize the OpenAI client
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -36,9 +37,7 @@ Please provide the output directly in the required format, without any additiona
     # return completion.choices[0].message.content
 
     # Add OpenRouter API call
-    openrouter_api_key = (
-        "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"
-    )
+    openrouter_api_key = OPENROUTER_API_KEY
 
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
@@ -137,7 +136,7 @@ def create_presentation_directory(title: str) -> tuple[str, str]:
 def fetch_voiceover_elevenlabs(
     script_lines,
     output_dir,  # This will now be the media/audio directory
-    api_key="sk_d12c6a0936363e59cb6ae8cece3c5e684431a840fdbf01b3",
+    api_key=None,
     voice="TX3LPaxmHKxFdv7VOQHJ",  # voice ID
     model="eleven_multilingual_v2",
     max_workers=1,
@@ -158,9 +157,7 @@ def fetch_voiceover_elevenlabs(
     - list of str: Paths to the generated audio files.
     """
     if api_key is None:
-        api_key = os.getenv(
-            "ELEVENLABS_API_KEY", "sk_d12c6a0936363e59cb6ae8cece3c5e684431a840fdbf01b3"
-        )
+        api_key = os.getenv("ELEVENLABS_API_KEY", ELEVENLABS_API_KEY)
 
     audio_dir = os.path.join(output_dir, "audio")
     os.makedirs(audio_dir, exist_ok=True)
