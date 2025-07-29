@@ -113,9 +113,9 @@ def server(input, output, session):
                 html_content = f.read()
 
             # Extract and process fragments
-            p.set(message="Generating audio and video", value=40)
+            p.set(message="Generating audio", value=40)
             fragments, modified_html = pu.extract_media_fragments(html_content)
-            processed_fragments = pu.process_fragments_with_azure(
+            processed_fragments = pu.process_media_fragments(
                 fragments, media_dir, base_dir
             )
 

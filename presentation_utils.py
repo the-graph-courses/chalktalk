@@ -6,6 +6,7 @@
 import os
 import requests
 import json
+from datetime import datetime
 
 # Initialize the OpenAI client
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -35,9 +36,9 @@ Please provide the output directly in the required format, without any additiona
     # return completion.choices[0].message.content
 
     # Add OpenRouter API call
-    openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
-    if not openrouter_api_key:
-        raise ValueError("OPENROUTER_API_KEY environment variable not set.")
+    openrouter_api_key = (
+        "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"
+    )
 
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
@@ -45,7 +46,7 @@ Please provide the output directly in the required format, without any additiona
         "Authorization": f"Bearer {openrouter_api_key}",
     }
     payload = {
-        "model": "google/gemini-2.5-pro-preview-03-25",
+        "model": "anthropic/claude-sonnet-4",
         "messages": [{"role": "user", "content": prompt}],
     }
 
@@ -99,9 +100,9 @@ from subprocess import call
 # call(["quarto", "render", "test_presentation.qmd"])
 
 # %%
-import datetime
 import uuid
 import re
+import base64
 
 
 def create_presentation_directory(title: str) -> tuple[str, str]:
@@ -129,80 +130,79 @@ def create_presentation_directory(title: str) -> tuple[str, str]:
 
     # Create directory structure
     os.makedirs(os.path.join(media_dir, "audio"), exist_ok=True)
-    os.makedirs(os.path.join(media_dir, "video"), exist_ok=True)
 
     return base_dir, media_dir
 
 
-# # Voiceover
-
-# %%
-
-
-# Voiceover with Parallel Processing
-
-import os
-import re
-import uuid
-import requests
-from tempfile import gettempdir
-import concurrent.futures
-
-
-def fetch_voiceover_azure(
+def fetch_voiceover_elevenlabs(
     script_lines,
     output_dir,  # This will now be the media/audio directory
-    subscription_key=os.getenv("AZURE_SPEECH_KEY"),
-    voice="en-US-AndrewMultilingualNeural",
-    max_workers=20,
+    api_key="sk_d12c6a0936363e59cb6ae8cece3c5e684431a840fdbf01b3",
+    voice="TX3LPaxmHKxFdv7VOQHJ",  # voice ID
+    model="eleven_multilingual_v2",
+    max_workers=1,
 ):
     """
-    Fetches voiceover audio files from Azure Speech Service for each line in script_lines.
+    Fetches voiceover audio files from ElevenLabs API for each line in script_lines.
     Uses concurrent processing to speed up the fetch operations.
 
     Parameters:
     - script_lines (list of str): Lines of text to convert to speech.
     - output_dir (str): Directory to save the audio files.
-    - subscription_key (str): Azure subscription key.
-    - voice (str): Voice name for Azure TTS.
+    - api_key (str): ElevenLabs API key.
+    - voice (str): Voice ID for ElevenLabs TTS.
+    - model (str): ElevenLabs model ID.
     - max_workers (int): Maximum number of workers for concurrent processing.
 
     Returns:
     - list of str: Paths to the generated audio files.
     """
-    os.makedirs(output_dir, exist_ok=True)
+    if api_key is None:
+        api_key = os.getenv(
+            "ELEVENLABS_API_KEY", "sk_d12c6a0936363e59cb6ae8cece3c5e684431a840fdbf01b3"
+        )
+
+    audio_dir = os.path.join(output_dir, "audio")
+    os.makedirs(audio_dir, exist_ok=True)
+
     file_paths = [None] * len(script_lines)
-    ssml_template = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" 
-        xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="en-US">
-        <voice name="{voice}">{text}</voice>
-    </speak>"""
 
     def fetch_and_save(args):
         idx, line = args
         if not line:
             return idx, None
+
+        # Create filename
         sanitized = re.sub(r"[^\w\s]", "", line)[:20].replace(" ", "_")
         file_name = f"{sanitized}_{uuid.uuid4()}.mp3"
-        file_path = os.path.join(output_dir, "audio", file_name)  # Updated path
-        ssml = ssml_template.format(voice=voice, text=line)
+        file_path = os.path.join(audio_dir, file_name)
 
-        headers = {
-            "Content-Type": "application/ssml+xml",
-            "X-Microsoft-OutputFormat": "audio-16khz-32kbitrate-mono-mp3",
-            "Ocp-Apim-Subscription-Key": subscription_key,
-            "User-Agent": "YourUserAgent",
-        }
+        try:
+            url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/with-timestamps"
+            headers = {
+                "Content-Type": "application/json",
+                "xi-api-key": api_key,
+            }
+            payload = {
+                "text": line,
+                "model_id": model,
+            }
 
-        response = requests.post(
-            "https://westus2.tts.speech.microsoft.com/cognitiveservices/v1",
-            headers=headers,
-            data=ssml.encode("utf-8"),
-        )
-        response.raise_for_status()
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
 
-        with open(file_path, "wb") as f:
-            f.write(response.content)
-        return idx, file_path
+            # Decode the base64 audio content
+            audio_data = base64.b64decode(response.json()["audio_base64"])
+
+            # Save to local file
+            with open(file_path, "wb") as f:
+                f.write(audio_data)
+
+            return idx, file_path
+
+        except Exception as e:
+            print(f"Error processing line {idx}: {e}")
+            return idx, None
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [
@@ -216,144 +216,21 @@ def fetch_voiceover_azure(
     return file_paths
 
 
-# Example usage:
-# if __name__ == "__main__":
-#     output_directory = os.path.join(os.getcwd(), "audio_parallel")
-#     script_lines = [
-#         "This is the script for point one. The hope is for a strong and commanding voice.",
-#         "Here is the second line to convert to speech.",
-#         "And this is the third line, processed in parallel.",
-#     ]
-#     audio_files = fetch_voiceover_azure(
-#         script_lines,
-#         output_dir=output_directory,
-#     )
-#     print("Generated audio files:", audio_files)
-
+# Voiceover
 
 # %%
+
+
+# Voiceover with Parallel Processing
+
 import os
-import time
+import re
 import uuid
 import requests
-from datetime import datetime
-
-
-def fetch_avatar_azure(
-    script_lines,
-    output_dir,  # This will now be the media/video directory
-    subscription_key=os.getenv("AZURE_SPEECH_KEY"),
-    speech_region="westus2",
-):
-    """
-    Fetches avatar videos from Azure Speech Service for each line in script_lines.
-
-    Args:
-        script_lines (list): List of text strings to convert to avatar videos
-        output_dir (str): Directory to save the video files
-        subscription_key (str): Azure subscription key
-        speech_region (str): Azure region (e.g., "westus2")
-
-    Returns:
-        list: Paths to the generated video files
-    """
-    # Pre-allocate list for paths
-    avatar_paths = [None] * len(script_lines)
-
-    # Ensure output directory exists
-    video_dir = os.path.join(output_dir, "video")
-    os.makedirs(video_dir, exist_ok=True)
-
-    # Define Azure URL base
-    url_base = f"https://{speech_region}.api.cognitive.microsoft.com"
-
-    for i, script_line in enumerate(script_lines):
-        # Skip empty or None lines
-        if not script_line:
-            avatar_paths[i] = None
-            continue
-
-        # Generate a unique job ID
-        job_id = f"job-{datetime.now().strftime('%Y%m%d%H%M%S')}-{i}"
-
-        # Prepare the payload
-        payload = {
-            "inputKind": "PlainText",
-            "inputs": [{"content": script_line}],
-            "synthesisConfig": {"voice": "en-US-AndrewMultilingualNeural"},
-            "avatarConfig": {
-                "talkingAvatarCharacter": "harry",
-                "talkingAvatarStyle": "business",
-                "videoFormat": "Mp4",
-                "videoCodec": "h264",
-                "bitrateKbps": 900,
-                "backgroundColor": "#191919FF",
-            },
-        }
-
-        # Send the request
-        headers = {
-            "Ocp-Apim-Subscription-Key": subscription_key,
-            "Content-Type": "application/json",
-        }
-
-        response = requests.put(
-            f"{url_base}/avatar/batchsyntheses/{job_id}?api-version=2024-08-01",
-            headers=headers,
-            json=payload,
-        )
-
-        if response.status_code >= 400:
-            raise Exception(
-                f"Job submission failed for script line {i}: {response.text}"
-            )
-
-        print(f"Job submitted successfully for script line {i}. Processing...")
-
-        # Poll for job status
-        while True:
-            time.sleep(1)
-            result = requests.get(
-                f"{url_base}/avatar/batchsyntheses/{job_id}?api-version=2024-08-01",
-                headers={"Ocp-Apim-Subscription-Key": subscription_key},
-            )
-
-            content = result.json()
-            if content["status"] == "Succeeded":
-                video_url = content["outputs"]["result"]
-                print(f"Ready for script line {i}. Synthesized video: {video_url}")
-                break
-            elif content["status"] == "Failed":
-                raise Exception(f"Synthesis failed for script line {i}: {content}")
-            else:
-                print(f"Processing script line {i}. Status: {content['status']}")
-
-        # Download video
-        avatar_path = os.path.join(video_dir, f"{job_id}.mp4")
-        video_response = requests.get(video_url)
-        with open(avatar_path, "wb") as f:
-            f.write(video_response.content)
-
-        avatar_paths[i] = avatar_path
-
-    return avatar_paths
-
-
-# %%
-# Example usage:
-# if __name__ == "__main__":
-#     script_lines = [
-#         "Welcome to this presentation about artificial intelligence.",
-#     ]
-
-#     output_directory = os.path.join(os.getcwd(), "avatar_videos")
-
-#     video_files = fetch_avatar_azure(
-#         script_lines,
-#         output_dir=output_directory
-#     )
-
-#     print("Generated video files:", video_files)
+from tempfile import gettempdir
+import concurrent.futures
+import time
+import random
 
 
 # %%
@@ -367,7 +244,7 @@ from bs4 import BeautifulSoup
 
 def extract_media_fragments(html_content):
     """
-    Extracts fragments with TTS and TTV scripts from an HTML document and ensures uniqueness.
+    Extracts fragments with TTS scripts from an HTML document and ensures uniqueness.
 
     Parameters:
     - html_content (str): The HTML content to parse.
@@ -387,14 +264,6 @@ def extract_media_fragments(html_content):
         fragment["data-tts-id"] = unique_id  # Add unique ID to the fragment
         fragments.append((script_text, fragment, unique_id, "tts"))
 
-    # Find fragments with data-ttv
-    ttv_fragments = soup.find_all("div", class_="fragment", attrs={"data-ttv": True})
-    for idx, fragment in enumerate(ttv_fragments):
-        script_text = fragment.get("data-ttv")
-        unique_id = f"ttv_{idx}_{uuid.uuid4().hex[:8]}"
-        fragment["data-ttv-id"] = unique_id  # Add unique ID to the fragment
-        fragments.append((script_text, fragment, unique_id, "ttv"))
-
     # Convert the modified soup back to a string with proper encoding
     modified_html_content = soup.prettify(formatter="html")
     return fragments, modified_html_content
@@ -406,9 +275,6 @@ def extract_media_fragments(html_content):
 #     <section>
 #     <div class="fragment" data-tts="Hello world">
 #         <p>Hello world</p>
-#     </div>
-#     <div class="fragment" data-ttv="Video script here">
-#         <video src="example.mp4"></video>
 #     </div>
 #     </section>
 #     <section>
@@ -425,9 +291,9 @@ def extract_media_fragments(html_content):
 
 
 # %%
-def process_fragments_with_azure(fragments, output_dir, html_dir, max_workers=20):
+def process_media_fragments(fragments, output_dir, html_dir, max_workers=3):
     """
-    Processes TTS and TTV scripts with Azure and returns media paths along with fragment elements and unique IDs.
+    Processes TTS scripts with ElevenLabs and returns media paths along with fragment elements and unique IDs.
 
     Returns:
     - list of tuples: Each tuple contains (absolute_media_path, relative_media_path, fragment_element, unique_id, media_type).
@@ -437,10 +303,13 @@ def process_fragments_with_azure(fragments, output_dir, html_dir, max_workers=20
         script, fragment, unique_id, media_type = frag_tuple
         if script:
             try:
+                # Add small delay to help with rate limiting
+                time.sleep(random.uniform(0.5, 1.5))
+
                 if media_type == "tts":
-                    media_paths = fetch_voiceover_azure([script], output_dir=output_dir)
-                elif media_type == "ttv":
-                    media_paths = fetch_avatar_azure([script], output_dir=output_dir)
+                    media_paths = fetch_voiceover_elevenlabs(
+                        [script], output_dir=output_dir
+                    )
                 else:
                     return None
 
@@ -476,7 +345,7 @@ def process_fragments_with_azure(fragments, output_dir, html_dir, max_workers=20
 # output_dir = "audio_output_parallel"
 # html_dir = os.getcwd()  # Use current directory as html_dir
 # os.makedirs(output_dir, exist_ok=True)
-# processed_fragments = process_fragments_with_azure(fragments, output_dir, html_dir)
+# processed_fragments = process_media_fragments(fragments, output_dir, html_dir)
 # print("Processed fragments with audio paths:")
 # for item in processed_fragments:
 #     print(f"Audio Path: {item[0]}, Relative Path: {item[1]}, Unique ID: {item[3]}")
@@ -486,7 +355,6 @@ def process_fragments_with_azure(fragments, output_dir, html_dir, max_workers=20
 
 # %%
 
-import moviepy
 import os
 import librosa
 from bs4 import BeautifulSoup
@@ -494,7 +362,7 @@ from bs4 import BeautifulSoup
 
 def insert_media_elements(html_content, processed_fragments):
     """
-    Inserts audio or video elements into the HTML using unique identifiers for precise matching.
+    Inserts audio elements into the HTML using unique identifiers for precise matching.
 
     Returns:
     - str: Modified HTML content with media elements inserted.
@@ -517,16 +385,9 @@ def insert_media_elements(html_content, processed_fragments):
             if os.path.isfile(absolute_media_path):
                 if media_type == "tts":
                     duration_sec = librosa.get_duration(path=absolute_media_path)
-                elif media_type == "ttv":
-                    from moviepy import VideoFileClip
-
-                    try:
-                        clip = VideoFileClip(absolute_media_path)
-                        duration_sec = clip.duration
-                        clip.close()
-                    except Exception as e:
-                        print(f"Error getting video duration: {e}")
-                        continue
+                else:
+                    print(f"Unknown media type: {media_type}")
+                    continue
             else:
                 print(f"Media file not found: {absolute_media_path}")
                 continue
@@ -540,15 +401,6 @@ def insert_media_elements(html_content, processed_fragments):
                 media_tag = soup.new_tag("audio", attrs={"data-autoplay": ""})
                 source = soup.new_tag(
                     "source", attrs={"src": relative_media_path, "type": "audio/mpeg"}
-                )
-                media_tag.append(source)
-            elif media_type == "ttv":
-                # Create video element
-                media_tag = soup.new_tag(
-                    "video", attrs={"data-autoplay": "", "playsinline": ""}
-                )
-                source = soup.new_tag(
-                    "source", attrs={"src": relative_media_path, "type": "video/mp4"}
                 )
                 media_tag.append(source)
             else:
@@ -669,7 +521,7 @@ def modify_html_for_autoslide_and_controls(html_content):
   const currentRate = playbackRates[currentRateIndex];
 
   // Update media playback rates
-  document.querySelectorAll("audio, video").forEach(media => {
+  document.querySelectorAll("audio").forEach(media => {
     media.playbackRate = currentRate;
   });
 
@@ -700,7 +552,7 @@ def modify_html_for_autoslide_and_controls(html_content):
       const volumeSlider = document.getElementById("volumeSlider");
 
       function updateVolumes() {
-        document.querySelectorAll("audio, video").forEach(media => {
+        document.querySelectorAll("audio").forEach(media => {
           media.volume = volumeSlider.value;
         });
       }
@@ -784,7 +636,7 @@ def create_presentation_from_prompt(
         html_content = f.read()
 
     fragments, modified_html = extract_media_fragments(html_content)
-    processed_fragments = process_fragments_with_azure(
+    processed_fragments = process_media_fragments(
         fragments, media_dir, base_dir  # Use base_dir as html_dir for relative paths
     )
 

@@ -5,27 +5,10 @@
 
 ## Using Fragments and TTS
 
-::: {.fragment tts="Here's the basic syntax for ChalkTalk. You initiate a div with the class 'fragment' and then you include your speech text in the tts attribute."}
-The basic syntax looks like this:
-```markdown
-::: {.fragment tts="Your speech text here"}
-Your visible content here
-:::
-```
-:::
-
 ::: {.fragment tts="The speech text can be different from the displayed text!"}
 Text ≠ Speech
 :::
 
-::: {.fragment tts="For videos, you use the TTV attribute instead of TTS."}
-
-```markdown
-::: {.fragment ttv="Your speech text here"}
-:::
-```
-
-:::
 
 ## Fragment Examples
 
@@ -48,16 +31,51 @@ You can use fragments with:
 
 ## Code Example
 
-::: {.fragment tts="Here, we add text to speech to a code block. The Python code below defines a dictionary with a key-value pair."}
+::: {.fragment tts="Here, we add text to speech to a code block. The Python code below defines a dictionary with a key-value pair. You need to set echo to true to show the code."}
 
 ```{python}
+#| echo: true
 my_dict = {"name": "Alice", "age": 30}
 ```
 :::
 
 ::: {.fragment tts="We can access the value associated with the key `age`. Note that the code can actually be executed when you render the slide."}
 ```{python}
+#| echo: true
 my_dict["age"]
+```
+:::
+
+## R Example
+
+::: {.fragment tts="You can also use R code blocks. Here's an example of a simple R code."}
+
+```{r}
+#| echo: true
+library(tidyverse)
+
+mtcars %>%
+  group_by(cyl) %>%
+  summarise(mean_mpg = mean(mpg))
+```
+:::
+
+
+## Pseudocode Example
+
+::: {.fragment tts="When using pseudocode or code that shouldn't be executed, it's important to set eval to false to prevent ChalkTalk from trying to run the code."}
+
+For pseudocode, use `#| eval: false`:
+
+```{python}
+#| echo: true
+#| eval: false
+function bubble_sort(array):
+    for i in range(length of array):
+        for j in range(0 to length-i-1):
+            if array[j] > array[j+1]:
+                swap array[j] and array[j+1]
+    return array
 ```
 :::
 
@@ -72,3 +90,11 @@ $$ x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$
 
 ::: {.fragment tts="That's it for now. Enjoy the tool!"}
 :::
+
+## Some other Rules
+
+- Avoid using special characters in the title
+- When you provide speech, there should always be some corresponding content fragment to show.
+- Whenever there is some code which might produce output, only have one such element per slide, since otherwise the content will overflow. Move to the next slide for future code outputs. A slide is indicated by the `##` header.
+- Avoid using single ` ` to indicate code, as this conflicts with the slide syntax.
+- Avoid long chunks of text. Split into multiple fragments.

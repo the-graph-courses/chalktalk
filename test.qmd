@@ -1,0 +1,12 @@
+
+```{python}
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(
+  api_key="sk_d12c6a0936363e59cb6ae8cece3c5e684431a840fdbf01b3", # Defaults to ELEVEN_API_KEY
+)
+
+response = client.voices.get_all()
+#audio = client.generate(text="Hello there!", voice=response.voices[0])
+print(response.voices)
+```
